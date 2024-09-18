@@ -1,2 +1,2 @@
 # Graphos
-an app for drawwing on screen using your android phone
+A tool that enables drawing on your PC screen using your Android phone.
