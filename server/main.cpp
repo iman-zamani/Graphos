@@ -1,3 +1,4 @@
+//++ -o server.out main.cpp -lsfml-network -lsfml-system
 #include <SFML/Network.hpp>
 #include <iostream>
 
