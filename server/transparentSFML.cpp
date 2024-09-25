@@ -1,3 +1,4 @@
+//g++ transparentSFML.cpp -o transparent_window.out -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lXext
 #include <SFML/Graphics.hpp>
 
 #if defined (SFML_SYSTEM_WINDOWS)

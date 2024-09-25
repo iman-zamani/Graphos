@@ -4,16 +4,6 @@
 #include <iostream>
 #include <utility>  
 
-void setMousePosition(int x, int y)
-{
-    // set the mouse position relative to the desktop (screen)
-    sf::Mouse::setPosition(sf::Vector2i(x, y));
-    
-    std::cout << "Mouse position set to: X = " << x << ", Y = " << y << std::endl;
-}
-
-
-
 //get the mouse position relative to the screen
 std::pair<int, int> getMousePosition()
 {
