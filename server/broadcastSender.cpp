@@ -12,7 +12,7 @@ int main() {
     sf::UdpSocket socket;
     socket.setBlocking(true);
 
-    std::string message = "Hello, Network!";
+    std::string message = "Hello from Graphos Desktop app";
     sf::IpAddress broadcastAddress = sf::IpAddress::Broadcast;
     unsigned short port = 5555;
 

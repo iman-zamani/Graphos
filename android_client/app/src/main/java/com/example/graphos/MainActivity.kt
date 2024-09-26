@@ -14,6 +14,7 @@ class MainActivity : AppCompatActivity() {
     private var serverIp: String? = null
     private val listenPort = 5555
     private val expectedResponse = "Hello from Graphos Desktop app"
+    private val message = "Hello from Graphos android app"
     private var paired = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -45,6 +46,9 @@ class MainActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 updateUI("Failed")
                 e.printStackTrace()
+            }
+            serverIp?.let { ip ->
+                sendToServer(message, ip)
             }
         }
     }
