@@ -1,4 +1,4 @@
-//g++ -o app drawConnection.cpp -lsfml-network -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lXext
+//linux: g++ -o Graphos main.cpp -lsfml-network -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lXext
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
@@ -9,6 +9,9 @@
 #include <mutex>
 #include <memory>
 
+int windowSizeX ;
+int windowSizeY;
+
 // atomic flag to control the broadcasting
 std::atomic<bool> keepBroadcasting(true);
 
@@ -16,12 +19,157 @@ std::atomic<bool> keepBroadcasting(true);
 std::shared_ptr<std::vector<char>> global_image_data = nullptr; 
 std::mutex image_data_mutex; 
 bool update;
+bool windowVisible;
+#if defined (SFML_SYSTEM_WINDOWS)
+    #include <windows.h>
+
+    bool setShape(HWND hWnd, const sf::Image& image)
+    {
+        const sf::Uint8* pixelData = image.getPixelsPtr();
+
+        HRGN hRegion = CreateRectRgn(0, 0, image.getSize().x, image.getSize().y);
+        bool transparentPixelFound = false;
+        unsigned int rectLeft = 0;
+        for (unsigned int y = 0; y < image.getSize().y; y++)
+        {
+            for (unsigned int x = 0; x < image.getSize().x; x++)
+            {
+                const bool isTransparentPixel = (pixelData[y * image.getSize().x * 4 + x * 4 + 3] == 0);
+                if (isTransparentPixel && !transparentPixelFound)
+                {
+                    transparentPixelFound = true;
+                    rectLeft = x;
+                }
+                else if (!isTransparentPixel && transparentPixelFound)
+                {
+                    HRGN hRegionPixel = CreateRectRgn(rectLeft, y, x, y+1);
+                    CombineRgn(hRegion, hRegion, hRegionPixel, RGN_XOR);
+                    DeleteObject(hRegionPixel);
+                    transparentPixelFound = false;
+                }
+            }
+            if (transparentPixelFound)
+            {
+                HRGN hRegionPixel = CreateRectRgn(rectLeft, y, image.getSize().x, y+1);
+                CombineRgn(hRegion, hRegion, hRegionPixel, RGN_XOR);
+                DeleteObject(hRegionPixel);
+                transparentPixelFound = false;
+            }
+        }
+
+        SetWindowRgn(hWnd, hRegion, true);
+        DeleteObject(hRegion);
+        return true;
+    }
+
+    bool setTransparency(HWND hWnd, unsigned char alpha)
+    {
+        SetWindowLong(hWnd, GWL_EXSTYLE, GetWindowLong(hWnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+        SetLayeredWindowAttributes(hWnd, 0, alpha, LWA_ALPHA);
+        return true;
+    }
+
+#elif defined (SFML_SYSTEM_LINUX)
+    #include <X11/Xatom.h>
+    #include <X11/extensions/shape.h>
+
+    bool setShape(Window wnd, const sf::Image& image)
+    {
+        Display* display = XOpenDisplay(NULL);
+        int event_base, error_base;
+        if (!XShapeQueryExtension(display, &event_base, &error_base))
+        {
+            XCloseDisplay(display);
+            return false;
+        }
+
+        const sf::Uint8* pixelData = image.getPixelsPtr();
+        Pixmap pixmap = XCreatePixmap(display, wnd, image.getSize().x, image.getSize().y, 1);
+        GC gc = XCreateGC(display, pixmap, 0, NULL);
+
+        XSetForeground(display, gc, 1);
+        XFillRectangle(display, pixmap, gc, 0, 0, image.getSize().x, image.getSize().y);
+
+        XSetForeground(display, gc, 0);
+        bool transparentPixelFound = false;
+        unsigned int rectLeft = 0;
+        for (unsigned int y = 0; y < image.getSize().y; y++)
+        {
+            for (unsigned int x = 0; x < image.getSize().x; x++)
+            {
+                const bool isTransparentPixel = (pixelData[y * image.getSize().x * 4 + x * 4 + 3] == 0);
+                if (isTransparentPixel && !transparentPixelFound)
+                {
+                    transparentPixelFound = true;
+                    rectLeft = x;
+                }
+                else if (!isTransparentPixel && transparentPixelFound)
+                {
+                    XFillRectangle(display, pixmap, gc, rectLeft, y, x - rectLeft, 1);
+                    transparentPixelFound = false;
+                }
+            }
+            if (transparentPixelFound)
+            {
+                XFillRectangle(display, pixmap, gc, rectLeft, y, image.getSize().x - rectLeft, 1);
+                transparentPixelFound = false;
+            }
+        }
+
+        XShapeCombineMask(display, wnd, ShapeBounding, 0, 0, pixmap, ShapeSet);
+        XFreeGC(display, gc);
+        XFreePixmap(display, pixmap);
+        XFlush(display);
+        XCloseDisplay(display);
+        return true;
+    }
+
+    bool setTransparency(Window wnd, unsigned char alpha)
+    {
+        Display* display = XOpenDisplay(NULL);
+        unsigned long opacity = (0xffffffff / 0xff) * alpha;
+        Atom property = XInternAtom(display, "_NET_WM_WINDOW_OPACITY", false);
+        if (property != None)
+        {
+            XChangeProperty(display, wnd, property, XA_CARDINAL, 32, PropModeReplace, (unsigned char*)&opacity, 1);
+            XFlush(display);
+            XCloseDisplay(display);
+            return true;
+        }
+        else
+        {
+            XCloseDisplay(display);
+            return false;
+        }
+    }
+
+    #undef None
+#elif defined (SFML_SYSTEM_MACOS)
+    bool setShape(sf::WindowHandle handle, const sf::Image& image);
+    bool setTransparency(sf::WindowHandle handle, unsigned char alpha);
+#else
+    bool setShape(sf::WindowHandle handle, const sf::Image& image)
+    {
+        return false;
+    }
+
+    bool setTransparency(sf::WindowHandle handle, unsigned char alpha)
+    {
+        return false;
+    }
+#endif
 
 void displayImage() {
-    sf::VideoMode desktopMode = sf::VideoMode::getDesktopMode();
-    sf::RenderWindow window(desktopMode, "Received Image", sf::Style::Fullscreen);
-
+    sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
+    windowSizeX = desktop.width;
+    windowSizeY = desktop.height;
+    sf::VideoMode defaultMode = sf::VideoMode(windowSizeX,windowSizeY);
     sf::Image image;
+    // just for avoiding some bugs 
+    image.loadFromFile("default.png");
+    sf::RenderWindow window(sf::VideoMode(image.getSize().x, image.getSize().y, 32), "Graphos", sf::Style::None);
+    window.setPosition(sf::Vector2i((sf::VideoMode::getDesktopMode().width - image.getSize().x) / 2,
+                                    (sf::VideoMode::getDesktopMode().height - image.getSize().y) / 2));
     sf::Texture texture;
     sf::Sprite sprite;
     // Main loop for UI
@@ -49,16 +197,21 @@ void displayImage() {
                 sprite.setTexture(texture);
 
                 // Resize the sprite to fit the window
-                sf::Vector2u windowSize = window.getSize();
+                sf::Vector2u windowSize(windowSizeX,windowSizeY);
                 sf::Vector2u imageSize = texture.getSize();
-                float scaleX = static_cast<float>(windowSize.x) / imageSize.x;
-                float scaleY = static_cast<float>(windowSize.y) / imageSize.y;
+                float scaleX = static_cast<float>(windowSizeX) / imageSize.x;
+                float scaleY = static_cast<float>(windowSizeY) / imageSize.y;
                 sprite.setScale(scaleX, scaleY);
-            }            
+                setShape(window.getSystemHandle(), image);
+                window.setSize(sf::Vector2u(image.getSize().x, image.getSize().y));
+            }           
+            window.setVisible(windowVisible); 
         }
-        window.clear();
+        
+        window.clear(sf::Color::Transparent);
         window.draw(sprite);
         window.display();
+        
     }
 }
 
@@ -157,7 +310,7 @@ void startServer() {
         std::vector<char> image_data(image_size);
         std::size_t total_received = 0;
         
-        // Wiating until we get the full image 
+        // Waiting until we get the full image 
         while (total_received < image_size) {
             std::size_t received;
             if (client.receive(&image_data[total_received], image_size - total_received, received) != sf::Socket::Done) {
@@ -171,10 +324,16 @@ void startServer() {
             std::cout << "Image received successfully.\n";
 
             //changing the global image_data 
+            std::lock_guard<std::mutex> lock(image_data_mutex);
             {
-                std::lock_guard<std::mutex> lock(image_data_mutex);
+            if(image_size != 0){
                 update = true;
+                windowVisible = true;
                 global_image_data = std::make_shared<std::vector<char>>(image_data); // Store image data globally
+            }
+            else {
+                windowVisible = false;
+            }
             }
         } else {
             std::cerr << "Image receiving failed.\n";
@@ -185,11 +344,8 @@ void startServer() {
 }
 
 int main() {
-    // Start server in a separate thread to handle connections
     std::thread serverThread(startServer);
-    // Start broadcasting the pairing message
     broadcastMessage();
-    //Start server in a separate thread 
     std::thread GUIThread(displayImage);
 
     serverThread.join();
