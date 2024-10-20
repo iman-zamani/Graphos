@@ -6,7 +6,10 @@ plugins {
 android {
     namespace = "com.example.graphos"
     compileSdk = 34
-
+    buildFeatures {
+        viewBinding = true
+        dataBinding = true
+    }
     defaultConfig {
         applicationId = "com.example.graphos"
         minSdk = 23
@@ -45,6 +48,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.9")
 }
