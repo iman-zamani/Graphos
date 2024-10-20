@@ -1,25 +1,19 @@
 # Graphos
 
-Graphos is a versatile application designed to enhance your creativity and productivity by allowing you to draw on your PC display using an Android device. Additionally, you can use your Android device as a touchpad for more intuitive control. Graphos is compatible with macOS, Windows, and Linux.
+Graphos is a tool designed to assist in digital presentations by allowing users to draw and annotate directly on their PC screen from an Android device. It is particularly useful for educators and content creators who need to highlight or elaborate on visual elements during live or recorded sessions.
 
 ## Features
 
-1. **Drawing on PC**: Use your Android device to draw on your computer screen. Utilize a digital pen or simply your finger to create amazing artwork or annotations.
+- **Direct Drawing**: Users can draw directly on their PC screen from their Android phone or tablet.
+- **Overlay Capability**: Graphos overlays on existing applications, facilitating real-time illustrations without disrupting the workflow.
+- **Cross-Platform**: Compatible with any PC operating system, including macOS, Linux, and Windows.
 
-2. **Touchpad Functionality**: Transform your Android device into an efficient touchpad for your PC, enabling seamless navigation and control.
+## Development Status
 
+Graphos is in ongoing development with a focus on refining its user interface and expanding its feature set.
 
-
-## Usage
-
-1. **Connect Your Devices**: Ensure both your Android device and computer are connected to the same Wi-Fi network.
-2. **Launch Graphos**: Open the Graphos app on both your Android device and desktop.
-3. **Start Drawing or Navigate**: Choose whether to draw on your PC or use your Android device as a touchpad.
-
-
-## License
-
-Graphos is licensed under the MIT License. See the LICENSE file for more details.
+## Setup
+Graphos is currently available for Android devices. Installation details will be provided as the app becomes ready for broader testing.
 
 ## Acknowledgments
 - https://github.com/texus/TransparentWindows.git
