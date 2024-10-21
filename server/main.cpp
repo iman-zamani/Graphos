@@ -9,6 +9,14 @@
 #include <mutex>
 #include <memory>
 
+#define debug false
+void print(std::string  str){
+    if(debug){
+        std::cout<<str<<std::endl;
+    }
+    return ;
+}
+
 int windowSizeX ;
 int windowSizeY;
 
@@ -228,7 +236,7 @@ void broadcastMessage() {
         if (socket.send(message.c_str(), message.size(), broadcastAddress, port) != sf::Socket::Done) {
             std::cerr << "Error sending broadcast message.\n";
         } else {
-            std::cout << "Broadcast message sent.\n";
+            print("Broadcast message sent.");
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(100));  
     }
@@ -250,7 +258,7 @@ void startServer() {
         exit(-1);
     }
 
-    std::cout << "Server listening on " << serverIp.toString() << ":" << serverPort << std::endl;
+    print("Server listening on " + serverIp.toString() + ":" + std::to_string(serverPort));
 
     while (true) {
         sf::TcpSocket client;
@@ -263,7 +271,7 @@ void startServer() {
 
         sf::IpAddress clientIp = client.getRemoteAddress();
         unsigned short clientPort = client.getRemotePort();
-        std::cout << "Connection from " << clientIp.toString() << ":" << clientPort << std::endl;
+        print( "Connection from " + clientIp.toString() + ":" + std::to_string(clientPort));
 
         // Receive pairing message 
         char data[5000];
@@ -271,12 +279,12 @@ void startServer() {
         if (client.receive(data, sizeof(data), received) == sf::Socket::Done) {
             data[4999] = '\0';
             std::string receivedData(data, received);
-            std::cout << "Received: " << receivedData << std::endl;
+            print( "Received: " + receivedData);
 
             // If paired, stop broadcasting
             if (receivedData == "Hello from Graphos android app") {
                 keepBroadcasting = false;
-                std::cout << "Pairing successful\n";
+                print( "Pairing successful");
                 client.disconnect();
                 break; 
             }
@@ -305,7 +313,7 @@ void startServer() {
         }
 
         std::size_t image_size = std::stoul(size_str);
-        std::cout << "Receiving image of size: " << image_size << " bytes\n";
+        print( "Receiving image of size: " + std::to_string(image_size) + " bytes");
 
         std::vector<char> image_data(image_size);
         std::size_t total_received = 0;
@@ -321,7 +329,7 @@ void startServer() {
         }
 
         if (total_received == image_size) {
-            std::cout << "Image received successfully.\n";
+            print("Image received successfully");
 
             //changing the global image_data 
             std::lock_guard<std::mutex> lock(image_data_mutex);

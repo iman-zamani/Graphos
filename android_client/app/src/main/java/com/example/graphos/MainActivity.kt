@@ -54,7 +54,7 @@ class MainActivity : AppCompatActivity(), DrawingView.DrawingChangeListener {
                 if (paired) {
                     sendDrawing()
                 }
-                delay(200)  // Wait 200 milliseconds
+                delay(100)  // Wait 100 milliseconds
             }
         }
     }
