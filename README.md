@@ -1,4 +1,4 @@
-# Graphos
+# Graphos (Under Development)
 
 Graphos is a tool designed to assist in digital presentations by allowing users to draw and annotate directly on their PC screen from an Android device. It is particularly useful for educators and content creators who need to highlight or elaborate on visual elements during live or recorded sessions.
 
