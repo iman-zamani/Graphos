@@ -265,7 +265,7 @@ void displayDrawing() {
            
         }
         
-        window.clear(sf::Color::Red);
+        window.clear(sf::Color::Transparent);
         window.draw(sprite);
         window.display();
         
@@ -300,13 +300,14 @@ void startServer() {
     unsigned short serverPort = 5000;
 
     sf::TcpListener listener;
-
+    listener.setBlocking(false);
     // Binding the server to the port
     if (listener.listen(serverPort) != sf::Socket::Done) {
         std::cerr << "Error binding the server to port " << serverPort << std::endl;
         exit(-1);
     }
 
+    listener.setBlocking(true);
     print("Server listening on " + serverIp.toString() + ":" + std::to_string(serverPort));
 
     while (true) {
