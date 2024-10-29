@@ -1,7 +1,9 @@
+
 //linux: g++ -o Graphos main.cpp -lsfml-network -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lXext
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
+#include <cstring>
 #include <fstream>
 #include <thread>
 #include <chrono>
@@ -78,6 +80,7 @@ bool windowVisible;
     }
 
 #elif defined (SFML_SYSTEM_LINUX)
+    #include <X11/Xlib.h>
     #include <X11/Xatom.h>
     #include <X11/extensions/shape.h>
 
@@ -153,6 +156,9 @@ bool windowVisible;
 
     #undef None
 #elif defined (SFML_SYSTEM_MACOS)
+    #include <objc/objc.h>
+    #include <objc/message.h>
+    #include <objc/runtime.h>
     bool setShape(sf::WindowHandle handle, const sf::Image& image);
     bool setTransparency(sf::WindowHandle handle, unsigned char alpha);
 #else
@@ -167,7 +173,44 @@ bool windowVisible;
     }
 #endif
 
-void displayImage() {
+void setWindowAlwaysOnTop(sf::RenderWindow& window) {
+#ifdef _WIN32
+    // Windows: Use SetWindowPos to make the window always on top
+    HWND hwnd = window.getSystemHandle();
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE);
+#elif __APPLE__
+    // macOS: Use Objective-C runtime to set the NSWindow level to NSStatusWindowLevel
+    void* nsWindow = window.getSystemHandle();
+    id windowObj = reinterpret_cast<id>(nsWindow);
+    SEL setLevelSel = sel_registerName("setLevel:");
+    int NSStatusWindowLevel = 24;
+    ((void (*)(id, SEL, int))objc_msgSend)(windowObj, setLevelSel, NSStatusWindowLevel);
+#elif __linux__
+    // Linux: Use X11 to set the _NET_WM_STATE_ABOVE property
+    Display* display = XOpenDisplay(NULL);
+    if (display) {
+        Window xWindow = window.getSystemHandle();
+        Atom wmState = XInternAtom(display, "_NET_WM_STATE", False);
+        Atom wmStateAbove = XInternAtom(display, "_NET_WM_STATE_ABOVE", False);
+
+        XEvent xEvent;
+        memset(&xEvent, 0, sizeof(xEvent));
+        xEvent.type = ClientMessage;
+        xEvent.xclient.window = xWindow;
+        xEvent.xclient.message_type = wmState;
+        xEvent.xclient.format = 32;
+        xEvent.xclient.data.l[0] = 1;
+        xEvent.xclient.data.l[1] = wmStateAbove;
+        xEvent.xclient.data.l[2] = 0;
+        xEvent.xclient.data.l[3] = 1;
+
+        XSendEvent(display, DefaultRootWindow(display), False, SubstructureNotifyMask | SubstructureRedirectMask, &xEvent);
+        XFlush(display);
+        XCloseDisplay(display);
+    }
+#endif
+}
+void displayDrawing() {
     sf::VideoMode desktop = sf::VideoMode::getDesktopMode();
     windowSizeX = desktop.width;
     windowSizeY = desktop.height;
@@ -178,6 +221,8 @@ void displayImage() {
     sf::RenderWindow window(sf::VideoMode(image.getSize().x, image.getSize().y, 32), "Graphos", sf::Style::None);
     window.setPosition(sf::Vector2i((sf::VideoMode::getDesktopMode().width - image.getSize().x) / 2,
                                     (sf::VideoMode::getDesktopMode().height - image.getSize().y) / 2));
+    window.setFramerateLimit(60);
+    
     sf::Texture texture;
     sf::Sprite sprite;
     // Main loop for UI
@@ -212,11 +257,15 @@ void displayImage() {
                 sprite.setScale(scaleX, scaleY);
                 setShape(window.getSystemHandle(), image);
                 window.setSize(sf::Vector2u(image.getSize().x, image.getSize().y));
-            }           
-            window.setVisible(windowVisible); 
+                // make the window to be always in top
+                setWindowAlwaysOnTop(window);
+                
+            }   
+            window.setVisible(windowVisible);         
+           
         }
         
-        window.clear(sf::Color::Transparent);
+        window.clear(sf::Color::Red);
         window.draw(sprite);
         window.display();
         
@@ -354,8 +403,8 @@ void startServer() {
 int main() {
     std::thread serverThread(startServer);
     broadcastMessage();
-    std::thread GUIThread(displayImage);
-
+    std::thread GUIThread(displayDrawing);
+    
     serverThread.join();
     GUIThread.join();
     return 0;
