@@ -27,6 +27,7 @@ std::atomic<bool> keepBroadcasting(true);
 
 
 std::shared_ptr<std::vector<char>> global_image_data = nullptr; 
+std::shared_ptr<std::vector<char>> global_image_data1 = nullptr; 
 std::mutex image_data_mutex; 
 bool update;
 bool windowVisible;
@@ -385,9 +386,10 @@ void startServer() {
             std::lock_guard<std::mutex> lock(image_data_mutex);
             {
             if(image_size != 0){
-                update = true;
-                windowVisible = true;
-                global_image_data = std::make_shared<std::vector<char>>(image_data); // Store image data globally
+                update = false;
+                windowVisible = false;
+                global_image_data1 = std::make_shared<std::vector<char>>(image_data); // Store image data globally
+                std::cout<<"received "<<global_image_data1->size() <<"bytes"<<std::endl;;
             }
             else {
                 windowVisible = false;
