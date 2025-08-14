@@ -17,3 +17,8 @@ Graphos is currently available for Android devices. Installation details will be
 
 ## Acknowledgments
 - https://github.com/texus/TransparentWindows.git
+
+## License
+
+This project is licensed under a custom MIT-style license with an attribution requirement.
+See [CUSTOM\_LICENSE](./LICENSE) for full terms.
