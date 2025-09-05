@@ -1,5 +1,12 @@
 
 //linux: g++ -o Graphos main.cpp -lsfml-network -lsfml-system -lsfml-graphics -lsfml-window -lsfml-system -lX11 -lXext
+/* os X: clang++ -std=c++17 main.cpp Transparent.mm \
+  -I/opt/homebrew/opt/sfml@2/include \
+  -L/opt/homebrew/opt/sfml@2/lib \
+  -lsfml-graphics -lsfml-window -lsfml-system -lsfml-network \
+  -framework Cocoa \
+  -Wl,-rpath,/opt/homebrew/opt/sfml@2/lib  */
+
 #include <SFML/Graphics.hpp>
 #include <SFML/Network.hpp>
 #include <iostream>
