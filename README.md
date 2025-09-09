@@ -42,7 +42,7 @@ To compile Graphos, you'll need to build both the Android client and the server 
 
 ## License
 
-This project is licensed under a custom MIT-style license with an attribution requirement.
-See [CUSTOM\_LICENSE](./LICENSE) for full terms.
+This project is licensed under a MIT license.
+See [LICENSE](./LICENSE) for full terms.
 
 
